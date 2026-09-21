@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智慧工厂 · 数字孪生系统</title>
+
+    <!-- Cesium 静态资源基准地址：指向 public/cesium，需先于任何 Cesium 模块执行 -->
+    <script>
+      window.CESIUM_BASE_URL = '/cesium/'
+    </script>
+    <!-- Cesium 控件样式（public 原样伺服，样式内相对 URL 依然有效） -->
+    <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
