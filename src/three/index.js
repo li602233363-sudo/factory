@@ -1,12 +1,15 @@
 import { onMounted, onUnmounted } from 'vue'
+import {Basic} from './light/basic'
+import { Model } from './model/index.js'
+import Resources from './utils/Resources.js'
 import Time from './utils/Time'
 import Sizes from './utils/Sizes'
 import { Scene } from './utils/Scene'
 import { Renderer } from './utils/renderer'
 import { AddClick } from './utils/addclick.js'
-import {Basic} from './light/basic'
-import { Model } from './model/index.js'
-import Resources from './utils/Resources.js'
+import Camera from './utils/Camera.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 export default class Three {
     constructor(threeRef, attribute = {}) {
         this.threeRef = threeRef;
@@ -20,9 +23,9 @@ export default class Three {
     }
     init() {
         this.time = new Time()
-        this.sizes = new Sizes(threeRef.value)
+        this.sizes = new Sizes(this.threeRef.value)
         this.scene = new Scene().init()
-        this.renderer = new Renderer(threeRef, {
+        this.renderer = new Renderer(this.threeRef, {
             sizes: this.sizes
         })
         this.resources = new Resources([
@@ -79,36 +82,7 @@ export default class Three {
         this.passes.renderPass = new RenderPass(this.scene, this.camera.instance)
 
         this.passes.composer.addPass(this.passes.renderPass)
-        // 外发光描边（CNC 设备选中高亮）
-        this.createOutlinePass()
         this.time.on('tick', () =>{
-            // 第一人称：store.getPerson === '1' 时切换到绑在人物上的 fpCamera
-            const store = useDemoStore()
-            const fp = this.model && this.model.person && this.model.person.fpCamera
-            const useFirst = store.getPerson === '1' && !!fp
-            // 第一人称相机宽高比跟随主相机（主相机已处理 resize）
-            if (fp) {
-                fp.aspect = this.camera.instance.aspect
-                fp.updateProjectionMatrix()
-            }
-            const renderCamera = useFirst ? fp : this.camera.instance
-            this.passes.renderPass.camera = renderCamera
-            // 描边用与主渲染同一个相机（第一人称切到 fpCamera 时要跟着切）
-            this.outline?.syncCamera(renderCamera)
-            if (this.camera.orbitControls) this.camera.orbitControls.enabled = !useFirst
-
-            // 地图模式：先刷新 three 矩阵 → 把相机姿态镜像给 Cesium → 先渲染真实底图，再叠加 three
-            if (this.map) {
-                if (this.map.ready) {
-                    this.scene.updateMatrixWorld()
-                    if (this.camera.orbitControls) this.camera.orbitControls.update()
-                    if (renderCamera) renderCamera.updateMatrixWorld(true)
-                    this.map.syncFromThreeCamera(renderCamera)
-                    this.map.render()
-                } else if (this.camera.instance) {
-                    this.camera.instance.updateMatrixWorld()
-                }
-            }
             this.passes.composer.render()
         })
     }
@@ -211,8 +185,6 @@ export default class Three {
                 }
             })
         }
-        // 4.5 释放共用楼宇贴图缓存（同尺寸楼共用 Texture，这里统一清掉）
-        disposeFacadeTextures()
 
         // 5. 释放 WebGL context（防 context 累积，浏览器上限约 16 个）
         if (this.renderer) {

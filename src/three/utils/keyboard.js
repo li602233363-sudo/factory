@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import {useKeyboardStore} from '../../store/modules/keyboard'
+import {useKeyboardStore} from '@/store/modules/keyboard'
 
 const WORLD_UP = new THREE.Vector3(0, 1, 0)
 

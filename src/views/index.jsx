@@ -7,7 +7,7 @@ export default defineComponent({
     new Three(cesiumRef);
     return () => (
       <>
-        <div ref={cesiumRef} class="cesium-container" />
+        <canvas ref={cesiumRef} class="cesium-container" />
       </>
     )
   }

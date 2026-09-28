@@ -16,6 +16,7 @@
     "cesium": "^1.145.0",
     "echarts": "^6.1.0",
     "element-plus": "^2.14.6",
+    "pinia": "^4.0.3",
     "three": "^0.186.0",
     "three-base-utils": "^1.1.4",
     "vue": "^3.5.42",

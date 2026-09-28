@@ -16,26 +16,25 @@
  */
 import * as THREE from 'three'
 
-import Loader from '../Utils/Loader.js'
-import EventEmitter from '../Utils/EventEmitter.js'
+import Loader from './Loader.js'
+import EventEmitter from './EventEmitter.js'
 
-export default class Resources extends EventEmitter
-{
-    constructor(list)
-    {
+export default class Resources extends EventEmitter {
+    constructor(list) {
         super()
-
         this.loader = new Loader()
-        this.items = {}
-
         this.loader.load(list)
-        this.loader.on('fileEnd', (_resource, _data) =>
-        {
+        if (Array.isArray(list) && list.length > 0) {
+            this.init(list)
+        }
+    }
+    init(list) {
+        this.items = {}
+        this.loader.on('fileEnd', (_resource, _data) => {
             this.items[_resource.name] = _data
 
             // Texture
-            if(_resource.type === 'texture')
-            {
+            if (_resource.type === 'texture') {
                 const texture = new THREE.Texture(_data)
                 texture.needsUpdate = true
 
@@ -46,8 +45,7 @@ export default class Resources extends EventEmitter
             this.trigger('progress', [this.loader.loaded / this.loader.toLoad])
         })
 
-        this.loader.on('end', () =>
-        {
+        this.loader.on('end', () => {
             // Trigger ready
             this.trigger('ready')
         })

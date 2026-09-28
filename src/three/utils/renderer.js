@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-export default class Renderer {
+export class Renderer {
     constructor(threeRef, attribute = {}) {
         this.threeRef = threeRef
         this.sizes = attribute.sizes

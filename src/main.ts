@@ -6,8 +6,10 @@ import 'element-plus/dist/index.css'
 import router from './router'
 import App from './App.vue'
 import './styles/main.scss'
+import { initPinia } from './store/index.js'
 
 const app = createApp(App)
+initPinia(app);
 
 // 注册 Element Plus（配置中文语言包）
 app.use(ElementPlus, { locale: zhCn })
