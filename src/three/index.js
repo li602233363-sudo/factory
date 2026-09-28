@@ -1,9 +1,14 @@
 import { onMounted, onUnmounted } from 'vue'
 import Time from './utils/Time'
-import Sizes from '../utils/Sizes'
-import { Scene } from './util/Scene'
-import { Renderer } from './util/renderer'
+import Sizes from './utils/Sizes'
+import { Scene } from './utils/Scene'
+import { Renderer } from './utils/renderer'
 let communityScene = null
+function dispose() {
+    if (communityScene) {
+        communityScene = null
+    }
+}
 export default function useThree(cesiumRef, attribute = {}) {
     onMounted(() => {
         this.time = new Time()
@@ -14,11 +19,7 @@ export default function useThree(cesiumRef, attribute = {}) {
         })
     })
     onUnmounted(() => {
-        this.dispose();
-    }
-    dispose() {
-        if{ communityScene }{
-            this.communityScene = null;
-        }
-    }
+        dispose()
+    })
+
 }
