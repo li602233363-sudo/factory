@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted } from 'vue'
+import * as THREE from 'three'
 import {Basic} from './light/basic'
 import { Model } from './model/index.js'
 import Resources from './utils/Resources.js'
@@ -30,7 +31,7 @@ export default class Three {
         })
         this.resources = new Resources([
             // 加载模型
-            // { name: '人物', source: `${import.meta.env.BASE_URL}gltf/Soldier.glb` },
+            { name: '人物', source: `${import.meta.env.BASE_URL}gltf/Soldier.glb` },
             // { name: 'CNC5', source: `${import.meta.env.BASE_URL}models/newCnc5.glb` },
         ])
         this.setCamera();
@@ -83,6 +84,14 @@ export default class Three {
 
         this.passes.composer.addPass(this.passes.renderPass)
         this.time.on('tick', () =>{
+            // Cesium 关闭了自带渲染循环，必须由 three 的 tick 每帧手动驱动：
+            // 先同步相机位姿，再渲染底图，最后 three 透明层叠加其上
+            if (this.map && this.map.ready) {
+                // 确保 sync 读到的是本帧最新的相机世界矩阵
+                this.camera.instance.updateMatrixWorld()
+                this.map.syncFromThreeCamera(this.camera.instance)
+                this.map.render()
+            }
             this.passes.composer.render()
         })
     }
@@ -101,6 +110,7 @@ export default class Three {
         const { cesiumRef } = this.attribute || {}
         if (!cesiumRef || !cesiumRef.value) return
         try {
+            console.log('[Map] 初始化地图底图（Cesium）')
             const { CesiumMap } = await import('./map/CesiumMap.js')
             this.map = new CesiumMap(cesiumRef.value)
             await this.map.init()
