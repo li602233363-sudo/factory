@@ -16,15 +16,17 @@ export default class Camera
         this.sizes = _options.sizes
         this.renderer = _options.renderer
         this.scene = _options.scene
-        this.manyou = _options.attribute.manyou
+        this.manyou = _options.attribute?.manyou
         // manyou 切换：同时开关「鼠标漫游(OrbitControls)」与「键盘控制」
-        watch(this.manyou, (newVal)=>{
-            console.log('开始漫游')
-            if(this.keyboard){
-                if(newVal) this.keyboard.enable()
-                else this.keyboard.disable()
-            }
-        })
+        if (this.manyou) {
+            watch(this.manyou, (newVal)=>{
+                console.log('开始漫游')
+                if(this.keyboard){
+                    if(newVal) this.keyboard.enable()
+                    else this.keyboard.disable()
+                }
+            })
+        }
 
         // 初始化
         this.container = new THREE.Object3D()

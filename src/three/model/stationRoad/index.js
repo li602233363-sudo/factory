@@ -105,8 +105,8 @@ export class StationRoad {
    */
   createCrub(pathVertexes) {
     const geometry = this.crubFactory.createGemotryByVertexes(pathVertexes);
-    // 道牙纹理：注意该 URL 指向 /public 绝对路径，构建部署时需确认资源可访问
-    const imgUrl = new URL('/public/assets/imgs/curb01.png', import.meta.url).href;
+    // 道牙纹理：public 目录资源直接以 /assets/... 访问（不要带 /public 前缀）
+    const imgUrl = new URL('/assets/imgs/curb01.png', import.meta.url).href;
     const material = this.crubFactory.createDefaultMaterial({imgUrl, repeat:[10,10]});
     const crubMesh = this.crubFactory.createCrub(geometry, material);
     this.self.add(crubMesh);

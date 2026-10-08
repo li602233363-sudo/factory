@@ -60,7 +60,7 @@ export class CreateCommunityOutline {
     return shape;
   }
   getGroundMaterial() {
-    const imgUrl = new URL('/public/assets/imgs/gravel01.jpg', import.meta.url).href;
+    const imgUrl = new URL('/assets/imgs/gravel01.jpg', import.meta.url).href;
 
     const texture = loadTexture(imgUrl, (texture) => {
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;

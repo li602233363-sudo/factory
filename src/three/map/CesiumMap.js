@@ -24,6 +24,14 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+/** 给异步操作加超时，超时后 reject，用于防止网络请求无限挂起导致底图一直不渲染 */
+function withTimeout(promise, ms) {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`timeout after ${ms}ms`)), ms)),
+  ])
+}
+
 export class CesiumMap {
   constructor(container, overrides = {}) {
     this.container = container
@@ -70,21 +78,33 @@ export class CesiumMap {
     // scene.sun.show = false
     scene.moon.show = false
 
-    await this.setupImagery()
-    await this.setupTerrain()
-    await this.setupOsmBuildings()
-
-    // 采样锚点处的真实海拔，用于锚点贴地
-    const groundHeight = await this.sampleGroundHeight(center.lng, center.lat)
-    center.height = groundHeight
-
-    this.anchor = new GeoAnchor({ lng: center.lng, lat: center.lat, height: groundHeight, scale, heading: this.config.heading })
+    // 先用海拔 0 构建锚点，让渲染循环能立刻接管底图；真实海拔采样完成后再 setHeight 重建
+    this.anchor = new GeoAnchor({ lng: center.lng, lat: center.lat, height: 0, scale, heading: this.config.heading })
 
     // 默认视野：俯视锚点，等待 three 相机接管后每帧被镜像覆盖
     viewer.camera.frustum.fov = this.config.fov * DEG2RAD
 
+    // 关键：立即标记 ready，避免影像/地形/OSM 任一网络请求挂起导致底图永远不渲染
     this.ready = true
-    console.log(`[CesiumMap] ready @ ${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}, 海拔 ${groundHeight.toFixed(1)}m`)
+
+    // 影像/地形/OSM/海拔采样放到后台逐步补齐，互不阻塞、且都带超时回退
+    this._loadLayers(center)
+  }
+
+  /**
+   * 后台加载影像、地形、OSM 建筑与锚点海拔。
+   * 不再 await 到底，任何一层失败/超时都能独立回退，不影响底图渲染。
+   */
+  async _loadLayers(center) {
+    await this.setupImagery()
+    await this.setupTerrain()
+    await this.setupOsmBuildings()
+
+    if (this.disposed) return
+    const groundHeight = await this.sampleGroundHeight(center.lng, center.lat)
+    center.height = groundHeight
+    if (this.anchor) this.anchor.setHeight(groundHeight)
+    console.log(`[CesiumMap] layers ready @ ${center.lng.toFixed(6)}, ${center.lat.toFixed(6)}, 海拔 ${groundHeight.toFixed(1)}m`)
   }
 
   // ---------------- 天地图底图 ----------------
@@ -197,14 +217,17 @@ export class CesiumMap {
     try {
       let provider
       if (this.config.ionToken) {
-        provider = await Cesium.createWorldTerrainAsync()
+        provider = await withTimeout(Cesium.createWorldTerrainAsync(), 10000)
       } else {
         console.warn(
           '[CesiumMap] 未配置 VITE_CESIUM_ION_TOKEN，地形暂回退 ArcGIS Terrain3D（开放服务）。' +
           '配置 token 后重启 dev 可切换为 Cesium World Terrain。'
         )
-        provider = await Cesium.CesiumTerrainProvider.fromUrl(
-          'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer'
+        provider = await withTimeout(
+          Cesium.CesiumTerrainProvider.fromUrl(
+            'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer'
+          ),
+          10000
         )
       }
       this.viewer.terrainProvider = provider
@@ -228,7 +251,7 @@ export class CesiumMap {
       return
     }
     try {
-      const tileset = await Cesium.createOsmBuildingsAsync()
+      const tileset = await withTimeout(Cesium.createOsmBuildingsAsync(), 10000)
       this._osmBuildings = this.viewer.scene.primitives.add(tileset)
       console.log('[CesiumMap] OSM 3D 建筑图层已加载')
     } catch (err) {

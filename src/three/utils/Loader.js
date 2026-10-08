@@ -56,12 +56,21 @@ export default class Resources extends EventEmitter
             extensions: ['drc'],
             action: (_resource) =>
             {
-                dracoLoader.load(_resource.source, (_data) =>
-                {
-                    this.fileLoadEnd(_resource, _data)
+                dracoLoader.load(
+                    _resource.source,
+                    (_data) =>
+                    {
+                        this.fileLoadEnd(_resource, _data)
 
-                    DRACOLoader.releaseDecoderModule()
-                })
+                        DRACOLoader.releaseDecoderModule()
+                    },
+                    undefined,
+                    (err) =>
+                    {
+                        console.error(`[Loader] Draco 资源加载失败: ${_resource.source}`, err)
+                        this.fileLoadEnd(_resource, null)
+                    }
+                )
             }
         })
 
@@ -73,10 +82,20 @@ export default class Resources extends EventEmitter
             extensions: ['glb', 'gltf'],
             action: (_resource) =>
             {
-                gltfLoader.load(_resource.source, (_data) =>
-                {
-                    this.fileLoadEnd(_resource, _data)
-                })
+                gltfLoader.load(
+                    _resource.source,
+                    (_data) =>
+                    {
+                        this.fileLoadEnd(_resource, _data)
+                    },
+                    undefined,
+                    (err) =>
+                    {
+                        console.error(`[Loader] 模型加载失败: ${_resource.source}`, err)
+                        // 失败也推进计数，避免 Loading 遮罩永远不关闭
+                        this.fileLoadEnd(_resource, null)
+                    }
+                )
             }
         })
 
@@ -87,10 +106,19 @@ export default class Resources extends EventEmitter
             extensions: ['fbx'],
             action: (_resource) =>
             {
-                fbxLoader.load(_resource.source, (_data) =>
-                {
-                    this.fileLoadEnd(_resource, _data)
-                })
+                fbxLoader.load(
+                    _resource.source,
+                    (_data) =>
+                    {
+                        this.fileLoadEnd(_resource, _data)
+                    },
+                    undefined,
+                    (err) =>
+                    {
+                        console.error(`[Loader] 模型加载失败: ${_resource.source}`, err)
+                        this.fileLoadEnd(_resource, null)
+                    }
+                )
             }
         })
     }

@@ -8,17 +8,19 @@ export class AddClick extends EventEmitter {
         this.scene = scene;
         this.threeRef = threeRef;
         this.init();
-        const { select } = attribute
-        watch(select, (newVal, oldVal) => {
-            console.log('select 变化:', newVal, oldVal)
-            // 在这里写你的点击 / 场景逻辑
-            const obj = this.scene.getObjectByName(newVal);
-            if(obj){
-                const worldPos = new THREE.Vector3()
-                obj.getWorldPosition(worldPos)
-                this.trigger('btn', [{object: obj, point: worldPos}])
-            }
-        })
+        const { select } = attribute || {}
+        if (select) {
+            watch(select, (newVal, oldVal) => {
+                console.log('select 变化:', newVal, oldVal)
+                // 在这里写你的点击 / 场景逻辑
+                const obj = this.scene.getObjectByName(newVal);
+                if(obj){
+                    const worldPos = new THREE.Vector3()
+                    obj.getWorldPosition(worldPos)
+                    this.trigger('btn', [{object: obj, point: worldPos}])
+                }
+            })
+        }
     }
     init() {
         this.flag = true;

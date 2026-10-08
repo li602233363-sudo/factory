@@ -13,7 +13,7 @@ export class Model {
         this.camera = _options.camera
         this.scene = _options.scene
         this.renderer = _options.renderer
-        this.passes = _options.passess
+        this.passes = _options.passes
         this.container = new THREE.Object3D()
         this.container.matrixAutoUpdate = false
         this.addclick = _options.addclick
@@ -47,7 +47,7 @@ export class Model {
     // 初始化道路材质
     __initMaterialForRoadGround() {
         const roadFactory = new GroundFactory();
-        const imgUrl = new URL('/public/assets/imgs/curb01.png', import.meta.url).href;
+        const imgUrl = new URL('/assets/imgs/curb01.png', import.meta.url).href;
         const material = roadFactory.createDefaultMaterial({imgUrl, repeat:[10,10],});
         material.polygonOffset = true;
         material.polygonOffsetFactor = -6; 
@@ -63,13 +63,5 @@ export class Model {
             camera: this.camera,
             sounds: this.sounds
         })
-    }
-    background(){
-        new Background({
-            time: this.time,
-            resources: this.resources,
-            scene: this.scene
-        })
-        this.container.add(this.person.container)
     }
 }
