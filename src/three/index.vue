@@ -64,13 +64,16 @@ onBeforeUnmount(() => {
     <div class="loading-panel">
       <template v-if="!errorMsg">
         <p class="loading-title">正在加载 3D 资源…</p>
-        <el-progress
-          :percentage="progress"
-          :stroke-width="14"
-          text-inside
-          striped
-          striped-flow
-        />
+        <div class="loading-progress">
+          <el-progress
+            :percentage="progress"
+            :stroke-width="16"
+            :show-text="false"
+            striped
+            striped-flow
+          />
+          <span class="loading-progress-text">{{ progress }}%</span>
+        </div>
         <p class="loading-file">
           {{ progress }}% · {{ currentFile || '准备中' }}
         </p>
@@ -125,6 +128,24 @@ onBeforeUnmount(() => {
 
 .loading-title.error {
   color: #f56c6c;
+}
+
+.loading-progress {
+  position: relative;
+}
+
+.loading-progress-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 35%);
+  pointer-events: none;
 }
 
 .loading-file {
