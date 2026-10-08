@@ -32,7 +32,8 @@ export default class Three {
         this.resources = new Resources([
             // 加载模型
             { name: '人物', source: `${import.meta.env.BASE_URL}gltf/Soldier.glb` },
-            // { name: 'CNC5', source: `${import.meta.env.BASE_URL}models/newCnc5.glb` },
+            { name: 'CNC5', source: `${import.meta.env.BASE_URL}models/newCnc5.glb` },
+            { name: '车间', source: `${import.meta.env.BASE_URL}models/chejian3.glb` },
         ])
         this.setCamera();
         this.addClick();

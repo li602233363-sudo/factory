@@ -1,6 +1,9 @@
 import * as THREE from 'three'
 import { GroundFactory } from 'three-base-utils/factory';
 import { ElLoading } from 'element-plus'
+import Controls from '../utils/Controls.js'
+import { CreateCommunityOutline } from './createOutline'
+import { StationRoad } from './stationRoad/index.js';
 
 export class Model {
     constructor(_options){
@@ -29,39 +32,15 @@ export class Model {
 
         this.resources.on('ready', () =>
         {
-            // this.setControls()
+            this.setControls()
             // // AxesHelper：辅助观察的坐标系
             // // this.scene.add(new THREE.AxesHelper(150))
-            // // 楼房
-            // this.container.add(createCommunityBuildings())
             // // 地面
-            // this.container.add(new CreateCommunityOutline().self)
-            // //墙
-            // this.container.add(new Wall());
+            this.container.add(new CreateCommunityOutline().self)
             // // 道路
-            // this.roadMaterial = this.__initMaterialForRoadGround();
-            // const road = new StationRoad({renderer: this.renderer, roadMaterial: this.roadMaterial});
-            // this.container.add(road.self);
-            // // 人
-            // this.setModel()
-            // /*
-            //   工厂-start
-            // */
-            // // public/models 下的 3 个模型
-            // // 创建厂房地面
-            // this.gongchang = new gongchang({
-            //     resources: this.resources,
-            //     container: this.container,
-            //     time: this.time,
-            //     attribute: this.attribute,
-            //     addclick: this.addclick,
-            //     scene: this.scene,
-            //     camera: this.camera
-            // })
-            // /*
-            //   工厂-end
-            // */
-            // this.container.needsUpdate = true;
+            this.roadMaterial = this.__initMaterialForRoadGround();
+            const road = new StationRoad({renderer: this.renderer, roadMaterial: this.roadMaterial});
+            this.container.add(road.self);
             loading.close()
         })
     }
@@ -84,19 +63,6 @@ export class Model {
             camera: this.camera,
             sounds: this.sounds
         })
-    }
-    setModel(){
-        this.person = new Person({
-            sizes: this.sizes,
-            time: this.time,
-            camera: this.camera,
-            sounds: this.sounds,
-            resources: this.resources,
-            controls: this.controls,
-            renderer: this.renderer,
-            passes: this.passes
-        })
-        this.container.add(this.person.container)
     }
     background(){
         new Background({
