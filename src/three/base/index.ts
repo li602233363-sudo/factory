@@ -72,23 +72,26 @@ export default class ThreeBase {
     this.scene.add(createDirectionalLight())
 
     // 网格地面参考
-    const grid = new THREE.GridHelper(20, 20, 0x444444, 0x2a2a2a)
-    this.scene.add(grid)
+    // const grid = new THREE.GridHelper(20, 20, 0x444444, 0x2a2a2a)
+    // this.scene.add(grid)
 
     // 初始加载指定模型
     const results = await loadGLTFModels(modelList, this.onProgress)
     this.modelResults = results
-    results.forEach((result, index) => {
-      const model = result.gltf.scene
-      // 两个模型沿 x 轴并排摆放，间距 3
-      model.position.x = (index - (results.length - 1) / 2) * 3
-      this.scene.add(model)
-    })
+    // results.forEach((result, index) => {
+    //   const model = result.gltf.scene
+    //   // 两个模型沿 x 轴并排摆放，间距 3
+    //   model.position.x = (index - (results.length - 1) / 2) * 3
+    //   this.scene.add(model)
+    // })
 
     window.addEventListener('resize', this.handleResize)
     this.animate()
   }
-
+  // 后期处理
+  setPasses = () =>{
+    
+  }
   handleResize = () => {
     const { clientWidth, clientHeight } = this.container
     this.camera.aspect = clientWidth / clientHeight
@@ -98,10 +101,8 @@ export default class ThreeBase {
 
   animate = () => {
     this.animationId = requestAnimationFrame(this.animate)
-
     // 阻尼与自动旋转需要逐帧更新
     this.controls.update()
-
     this.renderer.render(this.scene, this.camera)
   }
 
