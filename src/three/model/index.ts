@@ -42,6 +42,81 @@ export const modelList: ModelItem[] = [
   // { name: 'CNC', url: `${import.meta.env.BASE_URL}models/cnc.glb` },
 ]
 
+/** 探测文件开头时请求的字节数（只取极小片段，避免重新下载整个模型） */
+const SNIFF_BYTES = 160
+
+interface SniffResult {
+  /** HTTP 状态码 */
+  status: number
+  /** 响应是否成功 */
+  ok: boolean
+  /** 文件开头内容（按文本解码） */
+  head: string
+}
+
+/**
+ * 读取文件开头片段，用于分析加载失败的原因
+ * 探测本身失败（如断网、跨域）时返回 null，不影响原始错误
+ */
+async function sniffFileHead(url: string): Promise<SniffResult | null> {
+  try {
+    const response = await fetch(url, {
+      headers: { Range: `bytes=0-${SNIFF_BYTES - 1}` },
+      cache: 'no-store',
+    })
+
+    if (!response.ok || !response.body) {
+      return { status: response.status, ok: response.ok, head: '' }
+    }
+
+    const reader = response.body.getReader()
+    const { value } = await reader.read()
+    // 拿到开头片段后立即取消，剩余内容不再下载
+    await reader.cancel().catch(() => {})
+
+    return {
+      status: response.status,
+      ok: true,
+      head: value ? new TextDecoder().decode(value.subarray(0, SNIFF_BYTES)) : '',
+    }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 把加载失败翻译成可操作的提示
+ * 常见原因：Git LFS 指针未拉取、路径不存在、被开发服务器回退到 index.html
+ */
+async function describeLoadFailure(url: string, error: unknown): Promise<string> {
+  const message = `模型加载失败: ${url}`
+  const detail = error instanceof Error && error.message ? `（${error.message}）` : ''
+  const info = await sniffFileHead(url)
+
+  if (!info) return `${message}${detail}`
+
+  if (!info.ok) {
+    return info.status === 404
+      ? `${message}（HTTP 404，文件不存在）`
+      : `${message}（HTTP ${info.status}）`
+  }
+
+  // Git LFS 未拉取时，浏览器拿到的是指针文本而不是模型二进制
+  if (info.head.startsWith('version https://git-lfs')) {
+    return `${message}（文件是 Git LFS 指针，真实模型未拉取，请在项目根目录执行 git lfs pull）`
+  }
+
+  if (info.head.trimStart().startsWith('<')) {
+    return `${message}（返回的是 HTML 页面，通常是路径错误或被开发服务器回退到 index.html）`
+  }
+
+  if (url.endsWith('.glb') && !info.head.startsWith('glTF')) {
+    return `${message}（文件内容不是有效的 GLB 二进制）`
+  }
+
+  return `${message}${detail}`
+}
+
 /**
  * 批量加载 glTF / GLB 模型
  * 每个文件权重相同，按文件维度汇总总进度
@@ -85,8 +160,8 @@ export function loadGLTFModels(
             }
             report(model.name)
           },
-          () => {
-            reject(new Error(`模型加载失败: ${model.url}`))
+          async (error: unknown) => {
+            reject(new Error(await describeLoadFailure(model.url, error)))
           },
         )
       }),
