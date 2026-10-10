@@ -119,12 +119,13 @@ async function describeLoadFailure(url: string, error: unknown): Promise<string>
 
 /**
  * 批量加载 glTF / GLB 模型
+ * 模型清单直接使用本模块的 modelList，无需调用方传入
  * 每个文件权重相同，按文件维度汇总总进度
  */
 export function loadGLTFModels(
-  models: ModelItem[],
   onProgress?: (progress: LoadProgress) => void,
 ): Promise<ModelLoadResult[]> {
+  const models = modelList
   const loader = new GLTFLoader()
   const totalCount = models.length
 

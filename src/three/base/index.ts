@@ -10,7 +10,6 @@ import {
 import { createAmbientLight, createDirectionalLight } from '../utils/light'
 import {
   loadGLTFModels,
-  modelList,
   type LoadProgress,
   type ModelLoadResult,
 } from '../model/index'
@@ -75,8 +74,8 @@ export default class ThreeBase {
     // const grid = new THREE.GridHelper(20, 20, 0x444444, 0x2a2a2a)
     // this.scene.add(grid)
 
-    // 初始加载指定模型
-    const results = await loadGLTFModels(modelList, this.onProgress)
+    // 初始加载指定模型（模型清单由 model 模块内部的 modelList 提供）
+    const results = await loadGLTFModels(this.onProgress)
     this.modelResults = results
     // results.forEach((result, index) => {
     //   const model = result.gltf.scene
