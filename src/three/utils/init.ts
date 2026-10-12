@@ -10,15 +10,15 @@ export interface SceneOptions {
 }
 
 export interface CameraOptions {
-  /** 视场角（角度），默认 75 */
+  /** 视场角（角度），默认 45 */
   fov?: number
   /** 宽高比；不传时根据容器尺寸自动计算 */
   aspect?: number
-  /** 近裁剪面，默认 0.1 */
+  /** 近裁剪面，默认 1（与相机控件最近距离配合，避免贴到地面或模型内部） */
   near?: number
-  /** 远裁剪面，默认 1000 */
+  /** 远裁剪面，默认 20000（必须大于相机控件的最远距离，否则滚轮拉远后厂区会被裁掉） */
   far?: number
-  /** 相机位置，默认 (0, 0, 3) */
+  /** 相机位置，默认 (0, 320, 440)：厂区尺度（约 520 × 410）下从斜上方俯视 */
   position?: Vector3Like
 }
 
@@ -44,13 +44,27 @@ export interface OrbitControlsOptions {
   enablePan?: boolean
   /** 是否允许缩放（滚轮 / 双指），默认 true */
   enableZoom?: boolean
+  /**
+   * 滚轮 / 双指缩放速度，默认 1
+   * 滚轮每格的缩放量正比于鼠标上报的 deltaY：若某个鼠标/触控板每格 deltaY 很小
+   * （表现为“滚轮几乎没反应”），把这里调大即可，例如 3 ~ 5
+   */
+  zoomSpeed?: number
+  /** 是否以鼠标指针位置为中心缩放，默认 false（以 target 为中心） */
+  zoomToCursor?: boolean
+  /** 旋转速度，默认 1 */
+  rotateSpeed?: number
+  /** 平移速度，默认 1 */
+  panSpeed?: number
+  /** 平移时是否沿屏幕平面移动，默认 false（沿地面方向平移，适合厂区这类水平场景） */
+  screenSpacePanning?: boolean
   /** 是否开启阻尼（惯性），默认 true */
   enableDamping?: boolean
   /** 阻尼系数，默认 0.05 */
   dampingFactor?: number
-  /** 最近距离，默认 0.1 */
+  /** 最近距离，默认 1（要大于相机近裁剪面，否则会穿模） */
   minDistance?: number
-  /** 最远距离，默认 Infinity */
+  /** 最远距离，默认 8000（要小于相机远裁剪面，否则拉远后厂区会被裁掉） */
   maxDistance?: number
   /** 垂直旋转下限（弧度），默认 0 */
   minPolarAngle?: number
@@ -79,17 +93,20 @@ export function createScene(options: SceneOptions = {}): THREE.Scene {
 
 /**
  * 创建透视相机，尺寸默认从容器读取
+ * 默认值按厂区尺度（约 520 × 410）设置：
+ * 相机高于地面、与观察目标保持数百单位距离，滚轮缩放才有明显可见的变化
+ * （若把相机放在地面上，地面是刀刃视角，滚轮只会改变半径，画面几乎不会变化）
  */
 export function createCamera(
   container: HTMLElement,
   options: CameraOptions = {},
 ): THREE.PerspectiveCamera {
   const {
-    fov = 75,
+    fov = 45,
     aspect = container.clientWidth / container.clientHeight,
-    near = 0.1,
-    far = 1000,
-    position = [0, 0, 3],
+    near = 1,
+    far = 20000,
+    position = [0, 320, 440],
   } = options
 
   const camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
@@ -126,6 +143,7 @@ export function createRenderer(
 /**
  * 创建轨道控制器（OrbitControls）
  * 左键拖拽旋转、右键拖拽平移、滚轮缩放，始终围绕 target 点观察
+ * 滚轮缩放相关配置：enableZoom、zoomSpeed、zoomToCursor、minDistance、maxDistance
  * 注意：开启阻尼或自动旋转后，需要在渲染循环中调用 controls.update()
  */
 export function createOrbitControls(
@@ -138,10 +156,15 @@ export function createOrbitControls(
     enableRotate = true,
     enablePan = true,
     enableZoom = true,
+    zoomSpeed = 1,
+    zoomToCursor = false,
+    rotateSpeed = 1,
+    panSpeed = 1,
+    screenSpacePanning = false,
     enableDamping = true,
     dampingFactor = 0.05,
-    minDistance = 0.1,
-    maxDistance = Infinity,
+    minDistance = 1,
+    maxDistance = 8000,
     minPolarAngle = 0,
     maxPolarAngle = Math.PI / 2,
     autoRotate = false,
@@ -154,6 +177,11 @@ export function createOrbitControls(
   controls.enableRotate = enableRotate
   controls.enablePan = enablePan
   controls.enableZoom = enableZoom
+  controls.zoomSpeed = zoomSpeed
+  controls.zoomToCursor = zoomToCursor
+  controls.rotateSpeed = rotateSpeed
+  controls.panSpeed = panSpeed
+  controls.screenSpacePanning = screenSpacePanning
   controls.enableDamping = enableDamping
   controls.dampingFactor = dampingFactor
   controls.minDistance = minDistance

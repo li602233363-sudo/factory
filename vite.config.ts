@@ -88,4 +88,14 @@ function lfsModelGuard(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(), lfsModelGuard()],
+  resolve: {
+    /**
+     * three-base-utils 自带一份 three@0.153，而应用用的是 three@0.186
+     * 不做去重时页面里会存在两个 THREE 实例：
+     * three-base-utils/loader 返回的 Texture 不是本应用 THREE.Texture 的实例，
+     * three 0.186 不会上传它（version 恒为 0），贴图采样为纯黑
+     * 去重后统一使用应用安装的 three
+     */
+    dedupe: ['three'],
+  },
 })
