@@ -13,6 +13,7 @@ import {
   type LoadProgress,
   type ModelLoadResult,
 } from '../model/index'
+import { CreateCommunityOutline } from '../dimian/index'
 
 export interface ThreeBaseOptions {
   /** 加载进度回调 */
@@ -83,6 +84,8 @@ export default class ThreeBase {
     //   model.position.x = (index - (results.length - 1) / 2) * 3
     //   this.scene.add(model)
     // })
+    // 地面
+    this.scene.add(new CreateCommunityOutline().self)
 
     window.addEventListener('resize', this.handleResize)
     this.animate()

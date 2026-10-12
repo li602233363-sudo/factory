@@ -71,7 +71,7 @@ export function toVector3(value: Vector3Like): THREE.Vector3 {
  * 创建场景
  */
 export function createScene(options: SceneOptions = {}): THREE.Scene {
-  const { background = 0x16171d } = options
+  const { background = 0xffffff } = options
   const scene = new THREE.Scene()
   scene.background = new THREE.Color(background)
   return scene
