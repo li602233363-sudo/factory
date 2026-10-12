@@ -70,6 +70,16 @@ export interface OrbitControlsOptions {
   minPolarAngle?: number
   /** 垂直旋转上限（弧度），默认 Math.PI / 2（即不转到地面以下） */
   maxPolarAngle?: number
+  /**
+   * 相机高度下限（世界坐标 y），默认 0，即相机 y 轴不允许为负（不钻到地面以下）
+   * 说明：maxPolarAngle 只限制“相机相对 target 的垂直角度”，
+   * 但平移（screenSpacePanning）、以指针为中心缩放（zoomToCursor）、
+   * 外部直接改 target / camera.position 等路径都能绕过它；
+   * 这里会在每次 update 之后硬性夹一次高度作为兜底，
+   * 同时保证观察点（target）不会被拖到地平面（y = 0）以下
+   * 若想留一点离地间隙（避免贴地时地面变成刀刃视角），可设为 10 ~ 50
+   */
+  minCameraY?: number
   /** 是否自动旋转，默认 false */
   autoRotate?: boolean
   /** 自动旋转速度，默认 2 */
@@ -144,6 +154,8 @@ export function createRenderer(
  * 创建轨道控制器（OrbitControls）
  * 左键拖拽旋转、右键拖拽平移、滚轮缩放，始终围绕 target 点观察
  * 滚轮缩放相关配置：enableZoom、zoomSpeed、zoomToCursor、minDistance、maxDistance
+ * 垂直旋转范围：minPolarAngle、maxPolarAngle（默认 0 ~ Math.PI / 2，即不转到地面以下）
+ * 离地高度下限：minCameraY（默认 0，任何交互都不会让相机 y 为负）
  * 注意：开启阻尼或自动旋转后，需要在渲染循环中调用 controls.update()
  */
 export function createOrbitControls(
@@ -167,6 +179,7 @@ export function createOrbitControls(
     maxDistance = 8000,
     minPolarAngle = 0,
     maxPolarAngle = Math.PI / 2,
+    minCameraY = 1,
     autoRotate = false,
     autoRotateSpeed = 2,
   } = options
@@ -191,7 +204,38 @@ export function createOrbitControls(
   controls.autoRotate = autoRotate
   controls.autoRotateSpeed = autoRotateSpeed
 
-  // 立即同步一次，保证初始 target 生效
+  /**
+   * 相机高度兜底（见 minCameraY）
+   * OrbitControls 只在 update() 里夹垂直角度（相对 target 的 polar 角），
+   * 不含“离地高度”这一约束：平移（screenSpacePanning）、以指针为中心缩放（zoomToCursor）、
+   * 外部直接改 target / camera.position 都能让相机跑到地平面以下
+   * 所以把 update 包一层，控制器每次求值后立即把高度夹回来
+   * （不能只挂 change 事件：位移小于 OrbitControls 内部 EPS 时不会派发 change，
+   *   阻尼收敛阶段会残留 1e-3 量级的负高度）
+   */
+  const clampCameraY = () => {
+    // 观察点被拖到地平面（y = 0）以下时，整个观察系统一起抬回地面，观察方向保持不变
+    if (controls.target.y < 0) {
+      const lift = -controls.target.y
+      controls.target.y += lift
+      camera.position.y += lift
+    }
+
+    // 相机低于高度下限时，贴回下限高度并重新对准观察点
+    if (camera.position.y < minCameraY) {
+      camera.position.y = minCameraY
+      camera.lookAt(controls.target)
+    }
+  }
+
+  const updateControls = controls.update.bind(controls)
+  controls.update = (deltaTime?: number | null) => {
+    const moved = updateControls(deltaTime ?? null)
+    clampCameraY()
+    return moved
+  }
+
+  // 立即同步一次，保证初始 target 生效（并夹住外部传入的负高度）
   controls.update()
 
   return controls
